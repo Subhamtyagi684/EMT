@@ -204,17 +204,20 @@ exports.login = async function(req,res,next){
                     "Dashboard": [
                         {
                             name: "Number of Calls Handled",
-                            api: "https://www.google.com"
+                            api: "https://www.google.com",
+                            widget: "CALLS_HANDLED"
                         },
                         {
                             name: "Call Ratings",
-                            api: "https://www.google.com"
+                            api: "https://www.google.com",
+                            widget: "CALL_RATINGS"
                         }
                     ],
                     "Call Summary": [
                         {
                             name: "Calls List",
-                            api: "https://www.google.com"
+                            api: "https://www.google.com",
+                            widget: "CALLS_LIST"
                         }
                     ]
                 }
