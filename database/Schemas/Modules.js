@@ -28,6 +28,10 @@ const modulesSchema = new mongoose.Schema({
             // unique: true
         }
     ],
+    api: {
+        type: String,
+        default:null
+    },
     updatedOn: {
         type: Date,
         default: function(){
@@ -39,8 +43,16 @@ const modulesSchema = new mongoose.Schema({
         default: function(){
             return new Date()
         }
+    },
+    parentModuleId:{
+        type: ObjectId,
+        ref: 'Module'
+    },
+    isMain: {
+        type:Boolean,
+        default:false
     }
-   
+    
 });
 
 // status -
