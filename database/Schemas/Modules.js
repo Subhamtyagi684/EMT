@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { rolesAndPermissionStatusEnum } = require("../../configs/constants");
 const ObjectId = mongoose.Types.ObjectId;
 // const credentialModel = require("./Credential")
 // const getPassword = require("../../../helper/generatePassword");
@@ -20,18 +21,6 @@ const modulesSchema = new mongoose.Schema({
     description:{
         type:String
     },
-    actions:[
-        {
-            type: ObjectId,
-            ref: "Action",
-            required: true,
-            // unique: true
-        }
-    ],
-    api: {
-        type: String,
-        default:null
-    },
     updatedOn: {
         type: Date,
         default: function(){
@@ -44,13 +33,9 @@ const modulesSchema = new mongoose.Schema({
             return new Date()
         }
     },
-    parentModuleId:{
-        type: ObjectId,
-        ref: 'Module'
-    },
-    isMain: {
-        type:Boolean,
-        default:false
+    status: {
+        type: Number,
+        default: rolesAndPermissionStatusEnum.active
     }
     
 });

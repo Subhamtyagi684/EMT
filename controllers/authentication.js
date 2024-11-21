@@ -17,23 +17,18 @@ exports.login = async function(req,res,next){
         .populate({
             path:"role",
             match: { status: rolesAndPermissionStatusEnum.active },
-            select: ('permissions.moduleId')
+            select: ('permissions.updatedOn userType -_id name permissions.moduleId permissions.actions'),
+            populate: [
+                {
+                    path: "permissions.moduleId",
+                    select: ("-_id actions name displayName updatedOn")      // Exclude the _id field if not needed
+                },
+                {
+                    path: "permissions.actions",
+                    select: ("-_id name displayName updatedOn api")      // Exclude the _id field if not needed
+                }
+            ]
         })
-        // .populate({
-        //     path:"roles",
-        //     match: { status: rolesAndPermissionStatusEnum.active },
-        //     select: ('permissions.updatedOn userType -_id name permissions.moduleId permissions.actions'),
-        //     populate: [
-        //         {
-        //             path: "permissions.moduleId",
-        //             select: ("-_id actions name displayName updatedOn")      // Exclude the _id field if not needed
-        //         },
-        //         {
-        //             path: "permissions.actions",
-        //             select: ("_id name displayName updatedOn")      // Exclude the _id field if not needed
-        //         }
-        //     ]
-        // })
         // .populate([
         //     {
         //         path:"permissions.deny.moduleId",
@@ -59,14 +54,14 @@ exports.login = async function(req,res,next){
                 throw new Error("No user found with this email")
             }
             userDetails = userData;
-            allMenuModuleIds = userDetails.role.permissions.map(i=>i.moduleId);
             return bcrypt.compare(password,userData.password)
         })
         .then((isMatched)=>{
             if(!isMatched){
                 throw new Error("Password Mismatch")
             }
-            return verifyRolesAndPermissionByAggregation(allMenuModuleIds)
+            // return verifyRolesAndPermissionByAggregation(allMenuModuleIds)
+            return verifyRolesAndPermission(userDetails)
             
         })
         .then((permissions = {})=>{
@@ -107,49 +102,37 @@ exports.login = async function(req,res,next){
 }
 
 function verifyRolesAndPermission(userDetails){
+    let uiPermissions= {},tokenPermissions= {};
     try{
+        if(!userDetails.roles){
+            userDetails.roles = []
+        }
         let allRoles = [userDetails.role,...userDetails.roles];
         // throw new Error("Fix the roles")
+        
 
         let allowedmoduleWithActions = {}
         let deniedmoduleWithActions = {}
-        allRoles  = allRoles.filter((item, index, array) => {
+        allRoles.filter((item, index, array) => {
                 return array.findIndex(i => i.name === item.name) === index ;
             }
         ).map(i=>i.permissions).flatMap(i=>i).forEach((i=> {
-            if(allowedmoduleWithActions[i.moduleId.name]){
-                allowedmoduleWithActions[i.moduleId.name] = allowedmoduleWithActions[i.moduleId.name].concat(i.actions.map(i=>i.name));
-            }else{
-                allowedmoduleWithActions[i.moduleId.name] = i.actions.map(i=>i.name);
-            }
+            uiPermissions[i.moduleId.displayName] = i.actions.map(j=>{
+                return {
+                    name: j.displayName,
+                    api: j.api,
+                    widget: j.name
+                }
+            });
+
+            tokenPermissions[i.moduleId.name] = i.actions.map(j=>j.name);
+
         }))
 
-        userDetails.permissions.allow.forEach((i=> {
-            if(allowedmoduleWithActions[i.moduleId.name]){
-                allowedmoduleWithActions[i.moduleId.name] = allowedmoduleWithActions[i.moduleId.name].concat(i.actions.map(i=>i.name));
-            }else{
-                allowedmoduleWithActions[i.moduleId.name] = i.actions.map(i=>i.name);
-            }
-        }))
-
-        userDetails.permissions.deny.forEach((i=> {
-            if(deniedmoduleWithActions[i.moduleId.name]){
-                deniedmoduleWithActions[i.moduleId.name] = deniedmoduleWithActions[i.moduleId.name].concat(i.actions.map(i=>i.name));
-            }else{
-                deniedmoduleWithActions[i.moduleId.name] = i.actions.map(i=>i.name);
-            }
-        }));
-
-        for(let i in deniedmoduleWithActions){
-            if(allowedmoduleWithActions[i]){
-                allowedmoduleWithActions[i] = allowedmoduleWithActions[i].filter(item => !(deniedmoduleWithActions[i].includes(item)));
-            }
-        }
-        userDetails.allowedmoduleWithActions = allowedmoduleWithActions
-
-        return allowedmoduleWithActions
+        return {uiPermissions,tokenPermissions}
+        
     }catch(err){
-        return {}
+        return {uiPermissions:{},tokenPermissions:{}}
     }
 }
 

@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const ObjectId = mongoose.Types.ObjectId;
 // const credentialModel = require("./Credential")
 // const getPassword = require("../../../helper/generatePassword");
 const {rolesAndPermissionStatusEnum} = require("../../configs/constants");
@@ -18,6 +19,17 @@ const actionsSchema = new mongoose.Schema({
     description:{
         type:String
     },
+    api:{
+        type:String,
+    },
+    actions:[
+        {
+            type: ObjectId,
+            ref: "Action",
+            required: false
+            // unique: true
+        }
+    ],
     updatedOn: {
         type: Date,
         default: function(){
