@@ -4,7 +4,6 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 const cors = require('cors');
-app.use(cors());
 require('dotenv').config();
 const mongodbConnection=require('./database/mongoDb')
 mongodbConnection();
@@ -16,6 +15,7 @@ var v1Router = require('./routes/v1Router');
 
 var app = express();
 
+app.use(cors());
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
