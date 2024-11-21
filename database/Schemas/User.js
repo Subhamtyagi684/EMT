@@ -22,6 +22,10 @@ const userSchema = new mongoose.Schema({
     lastName: {
         type: String
     },
+    userType:{
+        type: Number,
+        required:true
+    },
     role: {
         type: ObjectId,
         ref: "Role",

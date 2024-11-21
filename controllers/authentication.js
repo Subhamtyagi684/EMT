@@ -73,7 +73,7 @@ exports.login = async function(req,res,next){
             userDetails.allowedmoduleWithActions = permissions.uiPermissions;
             return createToken({
                 userId: userDetails._id.toString(),
-                userType: userDetails.role?.name,
+                userType: userDetails.userType,
                 userRoles: permissions.tokenPermissions
             })
         })
@@ -87,6 +87,7 @@ exports.login = async function(req,res,next){
                 lastName: userDetails.lastName,
                 email: userDetails.emal,
                 status: userDetails.status,
+                userType: userDetails.userType,
                 allowedmoduleWithActions:userDetails.allowedmoduleWithActions
             }
             return res.send(apiResponse);
