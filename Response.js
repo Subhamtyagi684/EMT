@@ -1,12 +1,12 @@
 class ApiResponse {
     status;
-    statusCode;
+    // statusCode;
     message = "Something went wrong";
     result = {};
 
-    setStatusCode(statuscode){
-        this.statusCode = statuscode;
-    }
+    // setStatusCode(statuscode){
+    //     this.statusCode = statuscode;
+    // }
 
     setStatus(status){
         this.status = status;

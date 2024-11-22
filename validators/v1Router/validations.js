@@ -32,13 +32,24 @@ const loginWithPasswordValidation = async (req, res, next) => {
     }
 };
 
+const registerValidator = joi.object({
+    "firstName": joi.string().required(),
+    "lastName": joi.string(),
+    "email": joi.string().required(),
+    "password": joi.string().min(7).required(),
+    "userType":  joi.number().required()
+})
+
 const registerValidation = async (req, res, next) => {
     const payload = {
-        username: req.body.username,
-        password: req.body.password
+        "firstName": req.body["firstName"],
+        "lastName": req.body["lastName"],
+        "email": req.body["email"],
+        "password": req.body["password"],
+        "userType":req.body["userType"]
     };
 
-    const { error } = loginWithPasswordValidator.validate(payload);
+    const { error } = registerValidator.validate(payload);
     if (error) {
         // res.status(406);
         // return res.json(

@@ -17,10 +17,12 @@ const userSchema = new mongoose.Schema({
 
     firstName: {
         type: String,
-        required: true
+        required: true,
+        lowercase:true
     },
     lastName: {
-        type: String
+        type: String,
+        lowercase:true
     },
     userType:{
         type: Number,
@@ -53,7 +55,7 @@ const userSchema = new mongoose.Schema({
     roles: [{
         type: ObjectId,
         ref: "Role",
-        required: true,
+        required: false,
         unique: false
     }],
     permissions: {
@@ -87,7 +89,6 @@ const userSchema = new mongoose.Schema({
 // 2:"inactive"
 // 3:"deactivated"
 // 4:"hold"
-
 
 
 module.exports = mongoose.model("User", userSchema);

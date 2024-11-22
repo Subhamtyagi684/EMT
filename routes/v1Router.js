@@ -2,14 +2,12 @@ var express = require('express');
 var router = express.Router();
 const {loginWithPasswordValidation,registerValidation} = require("../validators/v1Router/validations");
 const {} = require("../middlewares/auth/middleware");
-const { login } = require('../controllers/authentication');
+const { login, register } = require('../controllers/authentication');
 
 /* GET home page. */
 router.post('/authenticate', loginWithPasswordValidation,  login);
 
-router.post('/register', registerValidation, function(req, res, next) {
-    res.send("Server is running")
-});
+router.post('/register', registerValidation, register);
 
 module.exports = router;
 

@@ -1,8 +1,10 @@
 const {createToken,verifyToken} = require("../helper/jwt");
 const userModel = require("../database/Schemas/User");
-const moduleModel  = require("../database/Schemas/Modules")
+const moduleModel  = require("../database/Schemas/Modules");
+const roleModel = require("../database/Schemas/Roles")
 const {ApiResponse,FunctionResponse} = require("../Response");
 const {userStatusEnum,rolesAndPermissionStatusEnum} = require("../configs/constants");
+const {generatePassword,encryptPassword} = require("../helper/generatePassword")
 const bcrypt = require("bcrypt");
 
 exports.login = async function(req,res,next){
@@ -91,6 +93,79 @@ exports.login = async function(req,res,next){
             let apiResponse = new ApiResponse();
             apiResponse.setStatus(400);
             apiResponse.setMessage(err.message || "Something went wrong");
+            return res.send(apiResponse);
+        })
+    }catch(err){
+        let apiResponse = new ApiResponse();
+        apiResponse.setStatus(400);
+        apiResponse.setMessage("Something went wrong");
+        return res.send(apiResponse);
+    }
+}
+
+exports.register = async function(req,res,next){
+    let userDetails = {}, allRoleDetails = {};
+    try{
+        encryptPassword(req.body.password)
+        .then((hashedPasswordObj)=>{
+            if(!hashedPasswordObj || !hashedPasswordObj.hash){
+                throw new Error("Password creation error")
+            }
+            req.body.password = hashedPasswordObj.hash;
+            userDetails = req.body;
+            return roleModel.findOne({userType:userDetails.userType}).populate([
+                {
+                    path: "permissions.moduleId",
+                    select: ("-_id actions name displayName updatedOn")      // Exclude the _id field if not needed
+                },
+                {
+                    path: "permissions.actions",
+                    select: ("-_id name displayName updatedOn api")      // Exclude the _id field if not needed
+                }
+            ]).lean()
+        })
+
+        .then((roleDetail)=>{
+            console.log(roleDetail)
+            if(!roleDetail){
+                throw new Error("Role type doesn't match")
+            }
+
+            allRoleDetails = roleDetail;
+            userDetails.role = roleDetail._id;
+            return userModel.create(userDetails)
+        })
+        .then((createdObj)=>{
+            if(createdObj.errors){
+                throw new Error("User creation failed")
+            }
+            console.log(createdObj)
+            userDetails.role = allRoleDetails;
+            return verifyRolesAndPermission(userDetails)
+        })
+        .then((permissions)=>{
+            userDetails.allowedmoduleWithActions = permissions.uiPermissions;
+            let apiResponse = new ApiResponse();
+            apiResponse.setStatus(201);
+            apiResponse.setMessage("User Created");
+            apiResponse.result = {
+                firstName: userDetails.firstName,
+                lastName: userDetails.lastName,
+                email: userDetails.email,
+                status: userStatusEnum.active,
+                userType: userDetails.userType,
+                allowedmoduleWithActions:userDetails.allowedmoduleWithActions
+            }
+            return res.send(apiResponse);
+        })
+        .catch((err)=>{
+            let apiResponse = new ApiResponse();
+            apiResponse.setStatus(400);
+            if(err.code==11000){
+                apiResponse.setMessage(`${Object.keys(err.keyValue)[0]} already exists`)
+            }else{
+                apiResponse.setMessage(err.message || "Something went wrong");
+            }
             return res.send(apiResponse);
         })
     }catch(err){
