@@ -1,9 +1,18 @@
 var express = require('express');
 var router = express.Router();
+const {fetchUserList} = require("../controllers/userHandler");
+const {authenticateToken,authorizeToken} = require("../middlewares/auth/middleware");
+const {moduleNames,actionNames} = require("../configs/constants")
 
 /* GET users listing. */
-router.get('/', function(req, res, next) {
-  res.send('respond with a resource');
-});
+router.post('/list',
+    (req,res,next)=>{
+        req.moduleName = moduleNames.USER_MANAGEMENT;
+        req.actionName = actionNames.USER_LIST;
+        next();
+    } 
+    ,authorizeToken, 
+    fetchUserList
+);
 
 module.exports = router;

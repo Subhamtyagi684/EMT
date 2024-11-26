@@ -4,43 +4,60 @@ const {verifyToken} = require("../../helper/jwt");
 // const roleModel = require("../../database/Models/auth/Role");
 // const permissionModel = require("../../database/Models/auth/Permission");
 // const userModel = require("../../database/Models/auth/User");
-
-module.exports.loginMiddleware = function(request,response,next){
-    let token= request.headers.token
-    if(!token){
-        response.status(403);
-        return response.json(
-            errorFunction(true,"Please pass token key in header")
-        );
+exports.authenticateToken= async function(req,res,next){
+    try{
+        let token = req.headers["x-access-token"] || req.headers["authorization"];
+        //console.log(`Token ${token}`);
+        if(!token){
+            let apiResponse = new ApiResponse();
+            apiResponse.setStatus(401);
+            apiResponse.setMessage("Authentication failed")
+            return res.send(apiResponse)
+        }
+        if (token.startsWith("Bearer ") || token.startsWith("bearer ")) {
+            token = token.slice(7, token.length);
+        }
+        verifyToken(token)
+        .then((tokenDetails)=>{
+            if(tokenDetails){
+                req.tokenDetails = tokenDetails;
+                next();
+            }else{
+                throw new Error("Error")
+            }
+        })
+        .catch((err)=>{
+            let apiResponse = new ApiResponse();
+            apiResponse.setStatus(401);
+            apiResponse.setMessage("Authentication failed")
+            return res.send(apiResponse)
+        })
+    }catch(err){
+        let apiResponse = new ApiResponse();
+        apiResponse.setStatus(401);
+        apiResponse.setMessage("Authentication failed")
+        return res.send(apiResponse)
     }
-    
-    verifyToken(token)
-    .then((decodedPayload)=>{
-        if(decodedPayload && decodedPayload.distributorId){
-            request.docodedToken = decodedPayload;
-            return tokenModel.findOne({distributorId:decodedPayload.distributorId,token:token,status:1}).lean()
-        }
-        return;
-    })
-    .then((data)=>{
-        if(data){
-            request.authorizationObject = data;
-            next()
-        }else{
-            response.status(403);
-            return response.json(
-                errorFunction(true,`Error while authenticating user: Invalid token`)
-            );
-        }
-    })
-    .catch((err)=>{
-        response.status(403);
-        return response.json(
-            errorFunction(true,`Error while authenticating user: ${err?err.message:"Something went wrong"}`)
-        );
-    })
 }
 
+exports.authorizeToken = async function (req,res,next){
+    try{
+        let tokenDetails = req.tokenDetails;
+        if(tokenDetails.userRoles[req.moduleName]  &&  tokenDetails.userRoles[req.moduleName].includes(req.actionName)){
+            next();
+        }else{
+            let apiResponse = new ApiResponse();
+            apiResponse.setStatus(403);
+            apiResponse.setMessage("Authorization failed")
+            return res.send(apiResponse)
+        }
+    }catch(err){
+        let apiResponse = new ApiResponse();
+        apiResponse.setStatus(403);
+        apiResponse.setMessage("Authorization failed")
+        return res.send(apiResponse)
+    }
+}
 
 module.exports.canAccess = async function(request,response,next){
     let roleFromToken = request.authorizationObject;
@@ -127,15 +144,4 @@ module.exports.canAccess = async function(request,response,next){
         );
     }
     next();
-}
-
-exports.authenticateToken = async function(req,res,next){
-    try{    
-        
-    }catch(err){
-        let response = new ApiResponse();
-        response.setStatus(401);
-        response.message = "Invalid Credenitals"
-        return res.send(response)
-    }
 }

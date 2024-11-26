@@ -82,7 +82,7 @@ exports.login = async function(req,res,next){
                 token:token,
                 firstName: userDetails.firstName,
                 lastName: userDetails.lastName,
-                email: userDetails.emal,
+                email: userDetails.email,
                 status: userDetails.status,
                 userType: userDetails.userType,
                 allowedmoduleWithActions:userDetails.allowedmoduleWithActions
